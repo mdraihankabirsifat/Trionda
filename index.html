@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Space Ball Runner — 3D Browser Game</title>
+  <meta name="description" content="A space-themed rolling ball runner. Dodge obstacles, collect boosters, and survive the infinite space track." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Three.js Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Screen Flash Effects -->
+  <div id="boost-flash"></div>
+  <div id="hit-flash"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HUD — Score, Speed, Pause (shown during gameplay)
+       ═══════════════════════════════════════════════════════ -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hud-panel" id="hud-score">
+        <div class="hud-label">Score</div>
+        <div class="hud-value" id="score-value">0</div>
+      </div>
+      <div class="hud-panel" id="hud-best">
+        <div class="hud-label">Best</div>
+        <div class="hud-value" id="best-value">0</div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-panel" id="hud-speed">
+        <div class="hud-label">Speed</div>
+        <div class="hud-value" id="speed-value">10.0</div>
+      </div>
+      <button id="pause-btn" title="Pause">⏸</button>
+    </div>
+  </div>
+
+  <!-- Boost Indicator -->
+  <div id="boost-indicator">+BOOST</div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Start Screen
+       ═══════════════════════════════════════════════════════ -->
+  <div id="start-screen" class="overlay overlay-bg-start visible">
+    <div class="game-title">Space Ball</div>
+    <div class="game-subtitle">Infinite Runner</div>
+    <div class="highscore-display">Best: <span id="start-highscore">0</span></div>
+
+    <!-- Theme Selector -->
+    <div class="theme-section-label">Choose Your Ball</div>
+    <div class="theme-selector" id="theme-selector">
+      <div class="theme-option selected" data-theme="space">
+        <div class="theme-preview" style="background: radial-gradient(circle at 35% 35%, #80efff, #20a0d0)"></div>
+        <span class="theme-name">Space</span>
+      </div>
+      <div class="theme-option" data-theme="neon">
+        <div class="theme-preview" style="background: radial-gradient(circle at 35% 35%, #ff60d0, #c010a0)"></div>
+        <span class="theme-name">Neon</span>
+      </div>
+      <div class="theme-option" data-theme="football">
+        <div class="theme-preview" style="background: radial-gradient(circle at 35% 35%, #ffffff, #aaaaaa)"></div>
+        <span class="theme-name">Football</span>
+      </div>
+      <div class="theme-option" data-theme="worldcup">
+        <div class="theme-preview" style="background: radial-gradient(circle at 35% 35%, #ffe880, #cc9900)"></div>
+        <span class="theme-name">World Cup</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="start-btn">Start Game</button>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-small" id="start-settings-btn">Settings</button>
+      <button class="btn btn-small" id="start-about-btn">About</button>
+    </div>
+
+    <div class="controls-hint">
+      <div class="key-hint"><span class="key-box">A</span><span>/ ← Left</span></div>
+      <div class="key-hint"><span class="key-box">D</span><span>/ → Right</span></div>
+      <div class="key-hint"><span class="key-box">Esc</span><span>Pause</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Pause Screen
+       ═══════════════════════════════════════════════════════ -->
+  <div id="pause-screen" class="overlay overlay-bg-pause">
+    <div class="pause-title">Paused</div>
+    <div class="btn-row" style="flex-direction:column; gap:10px">
+      <button class="btn btn-primary" id="resume-btn">Resume</button>
+      <button class="btn btn-small" id="pause-settings-btn">Settings</button>
+      <button class="btn btn-small" id="pause-restart-btn">Restart</button>
+      <button class="btn btn-small btn-danger" id="pause-menu-btn">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Game Over Screen
+       ═══════════════════════════════════════════════════════ -->
+  <div id="gameover-screen" class="overlay overlay-bg-over">
+    <div class="gameover-title">Game Over</div>
+    <div class="gameover-score" id="final-score">Score: 0</div>
+    <div class="gameover-best" id="final-best">Best: 0</div>
+    <div class="gameover-newbest" id="new-best-label" style="display:none">★ NEW BEST ★</div>
+    <div class="gameover-distance" id="final-distance">Distance: 0m</div>
+    <div class="btn-row" style="flex-direction:column; gap:10px">
+      <button class="btn btn-primary" id="restart-btn">Play Again</button>
+      <button class="btn btn-small btn-danger" id="gameover-menu-btn">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Settings Panel
+       ═══════════════════════════════════════════════════════ -->
+  <div id="settings-panel" class="overlay overlay-bg-panel">
+    <div class="panel-card">
+      <div class="panel-title">Settings</div>
+      <div class="setting-row">
+        <span class="setting-label">Music</span>
+        <div class="setting-controls">
+          <input type="range" class="vol-slider" id="music-vol" min="0" max="100" value="30" />
+          <input type="checkbox" class="toggle" id="music-toggle" checked />
+        </div>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Sound FX</span>
+        <div class="setting-controls">
+          <input type="range" class="vol-slider" id="sfx-vol" min="0" max="100" value="50" />
+          <input type="checkbox" class="toggle" id="sfx-toggle" checked />
+        </div>
+      </div>
+      <div class="panel-btn-row">
+        <button class="btn btn-small" id="settings-back-btn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       About Panel
+       ═══════════════════════════════════════════════════════ -->
+  <div id="about-panel" class="overlay overlay-bg-panel">
+    <div class="panel-card">
+      <div class="panel-title">About</div>
+      <p class="about-text"><strong>Space Ball Runner</strong></p>
+      <p class="about-text">A 3D endless runner built with <span class="accent">Three.js</span></p>
+      <p class="about-text">Steer left/right to dodge obstacles.<br/>Collect <span class="accent">boosters</span> to maintain speed.<br/>Survive as long as you can!</p>
+      <p class="about-text" style="margin-top:12px; font-size:11px; opacity:0.5">Made with ♥ — 2025</p>
+      <div class="panel-btn-row">
+        <button class="btn btn-small" id="about-back-btn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js CDN + Game -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="game.js"></script>
+
+</body>
+</html>
