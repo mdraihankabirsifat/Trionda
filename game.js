@@ -22,17 +22,22 @@ const CONFIG = {
   railHeight:         0.35,
 
   // Player ball
-  ballRadius:         0.5,
+  ballRadius:         0.75,
   laneSpeed:          14,
   trackHalfWidth:     4.2,
   gravity:           -28,
   fallThreshold:     -8,
 
-  // Speed (decays over time, boosters restore it)
+  // Speed (decays over time, boosters restore it, player can adjust)
   baseSpeed:          10,
   speedDecayRate:     0.28,
-  minSpeed:           3,
+  minSpeed:           4,
   maxSpeed:           28,
+
+  // Health System
+  maxHealth:          5,
+  invincibleDuration: 1.5,
+  healthRegenInterval:20,
 
   // Boosters
   boosterChance:      0.5,
@@ -68,11 +73,16 @@ const state = {
   onGround:       true,
   inputLeft:      false,
   inputRight:     false,
+  inputUp:        false,
+  inputDown:      false,
   touchStartX:    0,
   touchDeltaX:    0,
   selectedTheme:  'space',
   highScore:      0,
   boostersCollected: 0,
+  health:         5,
+  invincibleTimer:0,
+  healthRegenTimer:0,
 };
 
 
@@ -85,6 +95,7 @@ const dom = {
   hud:             document.getElementById('hud'),
   scoreValue:      document.getElementById('score-value'),
   bestValue:       document.getElementById('best-value'),
+  healthValue:     document.getElementById('health-value'),
   speedValue:      document.getElementById('speed-value'),
   pauseBtn:        document.getElementById('pause-btn'),
   boostFlash:      document.getElementById('boost-flash'),
@@ -614,11 +625,11 @@ function updateObstacles(dt) {
 
 const boosterGeo = new THREE.OctahedronGeometry(CONFIG.boosterRadius);
 const boosterMat = new THREE.MeshStandardMaterial({
-  color: 0x40ff90, emissive: 0x20ff70, emissiveIntensity: 1.0,
+  color: 0xffb000, emissive: 0xff8c00, emissiveIntensity: 1.5,
   metalness: 0.2, roughness: 0.1,
 });
 const boosterGlowMat = new THREE.MeshBasicMaterial({
-  color: 0x60ffa0, transparent: true, opacity: 0.12,
+  color: 0xffcc00, transparent: true, opacity: 0.25,
 });
 const boosterGlowGeo = new THREE.OctahedronGeometry(CONFIG.boosterRadius * 1.9);
 
@@ -713,6 +724,8 @@ function checkObstacleHit() {
 window.addEventListener('keydown', e => {
   if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  state.inputLeft = true;
   if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') state.inputRight = true;
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    state.inputUp = true;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  state.inputDown = true;
   if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
     if (state.phase === 'playing') pauseGame();
     else if (state.phase === 'paused') resumeGame();
@@ -721,6 +734,8 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => {
   if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  state.inputLeft = false;
   if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') state.inputRight = false;
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    state.inputUp = false;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  state.inputDown = false;
 });
 
 // Touch
@@ -810,6 +825,8 @@ function resetGameState() {
   state.currentSpeed = CONFIG.baseSpeed; state.ballVelY = 0;
   state.onGround = true; state.boostersCollected = 0;
   state.inputLeft = false; state.inputRight = false; state.touchDeltaX = 0;
+  state.inputUp = false; state.inputDown = false;
+  state.health = CONFIG.maxHealth; state.invincibleTimer = 0; state.healthRegenTimer = 0;
 
   // Clear world objects
   for (const s of segments) { scene.remove(s.group); s.group.traverse(c => { if (c.geometry) c.geometry.dispose(); }); }
@@ -922,6 +939,7 @@ function updateHUD() {
   dom.scoreValue.textContent = Math.floor(state.score);
   dom.bestValue.textContent = state.highScore;
   dom.speedValue.textContent = state.currentSpeed.toFixed(1);
+  dom.healthValue.textContent = '❤️'.repeat(state.health);
 }
 
 
@@ -952,8 +970,36 @@ function gameLoop() {
 
   state.timePlayed += dt;
 
-  // ── Speed: decays over time ──
-  state.currentSpeed = Math.max(CONFIG.minSpeed, state.currentSpeed - CONFIG.speedDecayRate * dt);
+  // ── Health Regen ──
+  if (state.health < CONFIG.maxHealth) {
+    state.healthRegenTimer += dt;
+    if (state.healthRegenTimer >= CONFIG.healthRegenInterval) {
+      state.health++;
+      state.healthRegenTimer = 0;
+    }
+  }
+
+  // ── Invincibility ──
+  let isInvincible = false;
+  if (state.invincibleTimer > 0) {
+    state.invincibleTimer -= dt;
+    isInvincible = true;
+    // Blinking effect
+    ball.visible = Math.floor(now / 100) % 2 === 0;
+  } else {
+    ball.visible = true;
+  }
+
+  // ── Speed: manual control & decay ──
+  if (state.inputUp) {
+    state.currentSpeed += 5 * dt;
+  } else if (state.inputDown) {
+    state.currentSpeed -= 5 * dt;
+  } else {
+    // Decay if no input
+    state.currentSpeed -= CONFIG.speedDecayRate * dt;
+  }
+  state.currentSpeed = Math.max(CONFIG.minSpeed, Math.min(CONFIG.maxSpeed, state.currentSpeed));
 
   // ── Forward movement ──
   ball.position.z += state.currentSpeed * dt;
@@ -987,9 +1033,10 @@ function gameLoop() {
     ball.position.y += state.ballVelY * dt;
   }
 
-  // ── Ball rolling rotation ──
-  ball.rotation.x += state.currentSpeed * dt * 2;
-  ball.rotation.z -= lateral * CONFIG.laneSpeed * dt * 1.5;
+  // ── Ball rolling rotation (realistic physics) ──
+  // Circumference = 2 * PI * r. Rotation angle = distance / r.
+  ball.rotation.x += (state.currentSpeed * dt) / CONFIG.ballRadius;
+  ball.rotation.z -= (lateral * CONFIG.laneSpeed * dt) / CONFIG.ballRadius;
 
   // ── Fall check ──
   if (ball.position.y < CONFIG.fallThreshold) {
@@ -999,10 +1046,28 @@ function gameLoop() {
   }
 
   // ── Obstacle collision ──
-  if (checkObstacleHit()) {
-    triggerGameOver();
-    renderer.render(scene, camera);
-    return;
+  if (!isInvincible && checkObstacleHit()) {
+    state.health--;
+    Sound.playHit();
+    
+    // Hit flash
+    dom.hitFlash.classList.add('active');
+    setTimeout(() => dom.hitFlash.classList.remove('active'), 250);
+    
+    // Camera shake
+    CONFIG.camOffset.x = (Math.random() - 0.5) * 1.5;
+    CONFIG.camOffset.y = 5.5 + (Math.random() - 0.5) * 1.5;
+    setTimeout(() => { CONFIG.camOffset.set(0, 5.5, -9); }, 200);
+
+    if (state.health <= 0) {
+      triggerGameOver();
+      renderer.render(scene, camera);
+      return;
+    } else {
+      state.invincibleTimer = CONFIG.invincibleDuration;
+      // Slight speed penalty on hit
+      state.currentSpeed = Math.max(CONFIG.minSpeed, state.currentSpeed - 3);
+    }
   }
 
   // ── Updates ──

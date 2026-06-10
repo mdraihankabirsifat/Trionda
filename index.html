@@ -29,6 +29,10 @@
         <div class="hud-label">Best</div>
         <div class="hud-value" id="best-value">0</div>
       </div>
+      <div class="hud-panel" id="hud-health">
+        <div class="hud-label">Health</div>
+        <div class="hud-value" id="health-value" style="color: #ff4040; font-size: 18px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 60, 60, 0.5);"></div>
+      </div>
     </div>
     <div class="hud-right">
       <div class="hud-panel" id="hud-speed">
@@ -80,6 +84,8 @@
     <div class="controls-hint">
       <div class="key-hint"><span class="key-box">A</span><span>/ ← Left</span></div>
       <div class="key-hint"><span class="key-box">D</span><span>/ → Right</span></div>
+      <div class="key-hint"><span class="key-box">↑</span><span>Speed Up</span></div>
+      <div class="key-hint"><span class="key-box">↓</span><span>Slow Down</span></div>
       <div class="key-hint"><span class="key-box">Esc</span><span>Pause</span></div>
     </div>
   </div>
@@ -146,7 +152,7 @@
       <div class="panel-title">About</div>
       <p class="about-text"><strong>Space Ball Runner</strong></p>
       <p class="about-text">A 3D endless runner built with <span class="accent">Three.js</span></p>
-      <p class="about-text">Steer left/right to dodge obstacles.<br/>Collect <span class="accent">boosters</span> to maintain speed.<br/>Survive as long as you can!</p>
+      <p class="about-text">Steer left/right to dodge obstacles.<br/>Use <span class="accent">Up/Down arrows</span> to control speed manually.<br/>Collect <span class="accent">boosters</span> to maintain speed.<br/>You have <span class="accent" style="color: #ff4040;">5 hearts</span>, hitting obstacles removes them.<br/>Hearts regenerate over time. Survive as long as you can!</p>
       <p class="about-text" style="margin-top:12px; font-size:11px; opacity:0.5">Made with ♥ — 2025</p>
       <div class="panel-btn-row">
         <button class="btn btn-small" id="about-back-btn">Back</button>
