@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Space Ball Runner — 3D Browser Game</title>
+  <meta name="description" content="A space-themed rolling ball runner game built with Three.js. Dodge obstacles, collect energy orbs, and survive the infinite space track." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Three.js Render Target
+       ═══════════════════════════════════════════════════════ -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HUD — Score & Speed
+       ═══════════════════════════════════════════════════════ -->
+  <div id="hud">
+    <div class="hud-panel">
+      <div class="hud-label">Score</div>
+      <div class="hud-value" id="score-value">0</div>
+    </div>
+    <div class="hud-panel">
+      <div class="hud-label">Speed</div>
+      <div class="hud-value" id="speed-value">8.0</div>
+    </div>
+  </div>
+
+  <!-- Zone Effect Indicator -->
+  <div id="zone-indicator"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Start Screen
+       ═══════════════════════════════════════════════════════ -->
+  <div id="start-screen">
+    <div class="game-title">Space Ball</div>
+    <div class="game-subtitle">Infinite Runner</div>
+    <div class="start-prompt">Press any key to start</div>
+    <div class="controls-hint">
+      <div class="key-hint">
+        <span class="key-box">A</span>
+        <span>/ ←&ensp;Left</span>
+      </div>
+      <div class="key-hint">
+        <span class="key-box">D</span>
+        <span>/ →&ensp;Right</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Game Over Screen
+       ═══════════════════════════════════════════════════════ -->
+  <div id="gameover-screen">
+    <div class="gameover-title">Game Over</div>
+    <div class="gameover-score" id="final-score">Score: 0</div>
+    <div class="gameover-distance" id="final-distance">Distance: 0m</div>
+    <button class="restart-btn" id="restart-btn">Restart</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Three.js from CDN + Game Logic
+       ═══════════════════════════════════════════════════════ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="game.js"></script>
+
+</body>
+</html>
